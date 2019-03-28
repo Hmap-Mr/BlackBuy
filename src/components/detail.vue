@@ -13,8 +13,12 @@
                 <div class="wrap-box">
                     <div class="left-925">
                         <div class="goods-box clearfix">
-                            <div class="pic-box" style="width:370px;height:300px">
-                                <img :src="'http://111.230.232.110:8899'+goodsinfo.img_url" class="pic_img">
+                            <div class="pic-box pic-box-warp">
+                                <el-carousel>
+                                    <el-carousel-item v-for="(item,index) in imglist" :key="index">
+                                       <img :src="item.thumb_path" class="pic_img">
+                                    </el-carousel-item>
+                                </el-carousel>
                             </div>
                             <div class="goods-spec">
                                 <h1>{{ goodsinfo.title }}</h1>
@@ -42,21 +46,7 @@
                                         <dt>购买数量</dt>
                                         <dd>
                                             <div class="stock-box">
-                                                <div class="el-input-number el-input-number--small">
-                                                    <span role="button" class="el-input-number__decrease is-disabled">
-                                                        <i class="el-icon-minus"></i>
-                                                    </span>
-                                                    <span role="button" class="el-input-number__increase">
-                                                        <i class="el-icon-plus"></i>
-                                                    </span>
-                                                    <div class="el-input el-input--small">
-                                                        <!---->
-                                                        <input autocomplete="off" size="small" type="text" rows="2" max="60" min="1" validateevent="true" class="el-input__inner" role="spinbutton" aria-valuemax="60" aria-valuemin="1" aria-valuenow="1" aria-disabled="false">
-                                                        <!---->
-                                                        <!---->
-                                                        <!---->
-                                                    </div>
-                                                </div>
+                                                <el-input-number v-model="num" @change="handleChange" :min="0" :max="goodsinfo.stock_quantity" label="描述文字"></el-input-number>
                                             </div>
                                             <span class="stock-txt">
                                                 库存
@@ -97,48 +87,41 @@
                                         </div>
                                         <div class="conn-box">
                                             <div class="editor">
-                                                <textarea id="txtContent" name="txtContent" sucmsg=" " datatype="*10-1000" nullmsg="请填写评论内容！"></textarea>
+                                                <textarea id="txtContent" v-model="comment" name="txtContent" sucmsg=" " datatype="*10-1000" nullmsg="请填写评论内容！"></textarea>
                                                 <span class="Validform_checktip"></span>
                                             </div>
                                             <div class="subcon">
-                                                <input id="btnSubmit" name="submit" type="submit" value="提交评论" class="submit">
+                                                <input id="btnSubmit" name="submit" type="submit" value="提交评论" class="submit" @click="postComment" @keyup.enter="postComment">
                                                 <span class="Validform_checktip"></span>
                                             </div>
                                         </div>
                                     </div>
                                     <ul id="commentList" class="list-box">
-                                        <p style="margin: 5px 0px 15px 69px; line-height: 42px; text-align: center; border: 1px solid rgb(247, 247, 247);">暂无评论，快来抢沙发吧！</p>
-                                        <li>
+                                        <p v-show="commentlist.lenth==0" style="margin: 5px 0px 15px 69px; line-height: 42px; text-align: center; border: 1px solid rgb(247, 247, 247);">暂无评论，快来抢沙发吧！</p>
+                                        <li v-for="(item,index) in commentlist" :key="index">
                                             <div class="avatar-box">
                                                 <i class="iconfont icon-user-full"></i>
                                             </div>
                                             <div class="inner-box">
                                                 <div class="info">
-                                                    <span>匿名用户</span>
-                                                    <span>2017/10/23 14:58:59</span>
+                                                    <span>{{ item.user_name }}</span>
+                                                    <span>{{ item.add_time | formatTime("YYYY-MM-DDTHH:mm:ss") }}</span>
+                                                    <span> ip : {{ item.user_ip.substr(7) }}</span>
                                                 </div>
-                                                <p>testtesttest</p>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <div class="avatar-box">
-                                                <i class="iconfont icon-user-full"></i>
-                                            </div>
-                                            <div class="inner-box">
-                                                <div class="info">
-                                                    <span>匿名用户</span>
-                                                    <span>2017/10/23 14:59:36</span>
-                                                </div>
-                                                <p>很清晰调动单很清晰调动单</p>
+                                                <p>{{ item.content }}</p>
                                             </div>
                                         </li>
                                     </ul>
                                     <div class="page-box" style="margin: 5px 0px 0px 62px;">
-                                        <div id="pagination" class="digg">
-                                            <span class="disabled">« 上一页</span>
-                                            <span class="current">1</span>
-                                            <span class="disabled">下一页 »</span>
-                                        </div>
+                                        <el-pagination
+                                          @size-change="handleSizeChange"
+                                          @current-change="handleCurrentChange"
+                                          :current-page="pageIndex"
+                                          :page-sizes="[5, 10, 15, 20]"
+                                          :page-size="pageSize"
+                                          layout="total, sizes, prev, pager, next, jumper"
+                                          :total="totalcount">
+                                        </el-pagination>
                                     </div>
                                 </div>
                             </div>
@@ -151,13 +134,16 @@
                                 <ul class="side-img-list">
                                     <li v-for="(item,index) in hotgoodslist" :key="index">
                                         <div class="img-box">
-                                            <a href="#/site/goodsinfo/90" class="">
+                                            <!-- <a href="#/site/goodsinfo/90" class=""> -->
+                                            <router-link :to="'/detail/'+item.id">
                                                 <img :src="item.img_url">
-                                            </a>
+                                            </router-link>
+                                            <!-- </a> -->
                                         </div>
                                         <div class="txt-box">
-                                            <a href="#/site/goodsinfo/90" class="">{{ item.title }}</a>
-                                            <span>{{ item.add_time | formatTime }}</span>
+                                            <!-- <a href="#/site/goodsinfo/90" class="">{{ item.title }}</a> -->
+                                            <router-link :to="'/detail/'+item.id">{{ item.title }}</router-link>
+                                            <span>{{ item.add_time | formatTime("YYYY年MM月DD日") }}</span>
                                         </div>
                                     </li>
                                 </ul>
@@ -174,7 +160,7 @@
 // import axios from 'axios'
 
 // 导入moment
-import moment from 'moment';
+// import moment from 'moment';
 export default {
     name:"detail",
     data(){
@@ -182,27 +168,85 @@ export default {
             goodsinfo:{},
             index:1,
             hotgoodslist:[],
+            num:0,
+            imglist:[],
+            comment:"",
+            pageIndex:1,
+            pageSize:10,
+            totalcount:0,
+            commentlist:[],
+
         }
     },
-    filters:{
-        formatTime(value){
-            return moment(value).format("YYYY-MM-DD");
+    methods: {
+        getDetail(){
+            this.$axios.get(`/site/goods/getgoodsinfo/${this.$route.params.id}`)
+                 .then((res)=>{
+                    //  console.log(res);
+                     this.goodsinfo = res.data.message.goodsinfo;
+                     this.hotgoodslist = res.data.message.hotgoodslist;
+                     this.imglist = res.data.message.imglist;
+                 });
         },
+        handleChange(value){
+            // console.log(value);
+        },
+        postComment(){
+            if(this.comment === ""){
+                this.$message.error("哥们,写点什么吧~!");
+            }else{
+                this.$axios
+                    .post(`/site/validate/comment/post/goods/${this.$route.params.id}`,{
+                        commenttxt:this.comment
+                    })
+                    .then((res)=>{
+                        if(res.data.status === 0){
+                            this.$message.success(res.data.message);
+                            this.comment = "";
+                            this.pageIndex = 1;
+                            this.getComment();
+                        }
+                    })
+            }
+        },
+        getComment(){
+            this.$axios.get(`/site/comment/getbypage/goods/${this.$route.params.id}?pageIndex=${this.pageIndex}&pageSize=${this.pageSize}`)
+                       .then(res=>{
+                        //    console.log(res);
+                           this.totalcount = res.data.totalcount;
+                           this.commentlist = res.data.message;
+                       })
+        },
+        handleSizeChange(size){
+            this.pageSize = size;
+            this.getComment();
+        },
+        handleCurrentChange(current){
+            this.pageIndex = current;
+            this.getComment();
+        },
+
     },
     created() {
-        this.$axios.get(`http://111.230.232.110:8899/site/goods/getgoodsinfo/${this.$route.params.id}`)
-             .then((res)=>{
-                 console.log(res);
-                 this.goodsinfo = res.data.message.goodsinfo;
-                 this.hotgoodslist = res.data.message.hotgoodslist;
-             })
+        this.getDetail();
+        this.getComment();
+    },
+    watch: {
+        $route(value,oldValue){
+            this.getDetail();
+            this.getComment();
+        }
     },
 }
 </script>
 
 <style>
+    .pic-box-warp{
+        width: 370px;
+        height: 300px;
+    }
     .pic_img{
-        width: 300px;
+        width: 370px;
         height: 300px;
     }
 </style>
